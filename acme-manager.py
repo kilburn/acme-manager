@@ -91,13 +91,19 @@ def _load_certificate_domains(args, log=LOGGER):
 def _generate_domain_key(args, log=LOGGER):
     """Generates the private key for a domain certificate"""
     path = os.path.join(args.path, args.name, 'domain.key')
-    # openssl genrsa 4096 > domain.key
-    proc = subprocess.Popen(["openssl", "genrsa", "4096"],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = proc.communicate()
-    if proc.returncode != 0:
-        raise IOError("OpenSSL Error: {0}".format(err))
-    _mode(_dump_bytes, 0640)(out, path)
+
+    if os.path.exists(path) and not args.force:
+        log.warn("Key file '%s' already exists, use --force if you want to create a new one." % path)
+
+    else:
+        # openssl genrsa 4096 > domain.key
+        proc = subprocess.Popen(["openssl", "genrsa", "4096"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        if proc.returncode != 0:
+            raise IOError("OpenSSL Error: {0}".format(err))
+        _mode(_dump_bytes, 0640)(out, path)
+        
     os.chmod(path, 0640)
 
 def _generate_domain_csr(args, log=LOGGER):
